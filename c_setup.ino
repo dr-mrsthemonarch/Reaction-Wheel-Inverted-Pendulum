@@ -1,6 +1,6 @@
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(256000);
   /* Initialise the sensor */
   Serial.println(F("Adafruit AHRS Fusion Example")); Serial.println("");
   // Initialize the sensors.
@@ -15,7 +15,7 @@ void setup()
     Serial.println("Ooops, no FXOS8700 detected ... Check your wiring!");
     while (1);
   }
-  filter.begin(100);
+  filter.begin(300);
   delay(300);
   ledcSetup(ledChannel, freq, resolution);   // configure LED PWM functionalitites
   ledcAttachPin(motorPin, ledChannel);   // attach the channel to the GPIO to be controlled

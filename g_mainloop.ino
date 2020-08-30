@@ -1,42 +1,46 @@
 void loop(void)
 {
+  unsigned long previousMillis = 0;
+  const long interval = 10000; // prime number
+  unsigned long currentMillis = micros();
   sensors_event_t gyro_event;
   sensors_event_t accel_event;
   sensors_event_t mag_event;
   gyro.getEvent(&gyro_event);
   accelmag.getEvent(&accel_event, &mag_event);
 
-  float axraw = accelmag.accel_raw.x;
-  float ax = (1.0007329 * (axraw / 4096) - 0.025653) * 9.81; //nxp cal method ai == w *raw/4096 + v
+  //nxp cal method ai == w *raw/4096 + v
+  double axraw = accelmag.accel_raw.x;
+  double ax = (1.0007329 * (axraw / 4096) - 0.025653) * 9.81;
 
-  float ayraw = accelmag.accel_raw.y;
-  float ay = (0.9944161 * (ayraw / 4096) + 0.037144) * 9.81;
+  double ayraw = accelmag.accel_raw.y;
+  double ay = (0.9944161 * (ayraw / 4096) + 0.037144) * 9.81;
 
-  float azraw = accelmag.accel_raw.z;
-  float az = (1.0185 * (azraw / 4096) - 0.0481) * 9.81;
+  double azraw = accelmag.accel_raw.z;
+  double az = (1.0185 * (azraw / 4096) - 0.0481) * 9.81;
 
 
   // Apply mag offset compensation (base values in uTesla)
-  float x = mag_event.magnetic.x - mag_offsets[0];
-  float y = mag_event.magnetic.y - mag_offsets[1];
-  float z = mag_event.magnetic.z - mag_offsets[2];
+  double x = mag_event.magnetic.x - mag_offsets[0];
+  double yy = mag_event.magnetic.y - mag_offsets[1];
+  double z = mag_event.magnetic.z - mag_offsets[2];
 
   // Apply mag soft iron error compensation
-  float mx = x * mag_softiron_matrix[0][0] + y * mag_softiron_matrix[0][1] + z * mag_softiron_matrix[0][2];
-  float my = x * mag_softiron_matrix[1][0] + y * mag_softiron_matrix[1][1] + z * mag_softiron_matrix[1][2];
-  float mz = x * mag_softiron_matrix[2][0] + y * mag_softiron_matrix[2][1] + z * mag_softiron_matrix[2][2];
+  double mx = x * mag_softiron_matrix[0][0] + yy * mag_softiron_matrix[0][1] + z * mag_softiron_matrix[0][2];
+  double my = x * mag_softiron_matrix[1][0] + yy * mag_softiron_matrix[1][1] + z * mag_softiron_matrix[1][2];
+  double mz = x * mag_softiron_matrix[2][0] + yy * mag_softiron_matrix[2][1] + z * mag_softiron_matrix[2][2];
 
   // Apply gyro zero-rate error compensation
-  float gx = gyro_event.gyro.x ;
-  float gy = gyro_event.gyro.y ;
-  float gz = gyro_event.gyro.z ;
+  double gx = gyro_event.gyro.x - gyro_zero_offsets[0];
+  double gy = gyro_event.gyro.y - gyro_zero_offsets[1];
+  double gz = gyro_event.gyro.z - gyro_zero_offsets[2];
 
   // The filter library expects gyro data in degrees/s, but adafruit sensor
   // uses rad/s so we need to convert them first (or adapt the filter lib
   // where they are being converted)
   gx *= 57.2958F;
   gy *= 57.2958F;
-  float gzz = gz * 57.2958F;
+  double gzz = gz * 57.2958F;
 
   //===================================================================================================================================================================
 
@@ -61,15 +65,31 @@ void loop(void)
 
   u[0] = theta;
   u[1] = -1 * gz;
-  u[2] = omega;
+  u[2] = -1 * omega;
 
-  lqrSignal = update_nssm3(u);
-  lqrMotor(lqrSignal);
 
-  Serial.print(theta - PI); // print in degrees
+  lqrSignal = update_LQR(u);
+  update_scm(u, y);
+  double nssm1 = y[0];
+  double nssm2 = y[1];
+  //Motor(y[0]);
+  Motor(lqrSignal);
+
+  Serial.print(currentMillis * 1e6, 3); // print in degrees
   Serial.print(",");
-  Serial.print(omega / 100);
+  Serial.print(theta * 180/M_PI); // print in degrees
   Serial.print(",");
   Serial.println(lqrSignal);
-  delayMicroseconds(150);
+  /*
+    if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    Serial.print(currentMillis * 1e6, 3); // print in degrees
+    Serial.print(",");
+    Serial.print(theta); // print in degrees
+    Serial.print(",");
+    Serial.println(lqrSignal);
+    }
+  */
+  delayMicroseconds(interval); // prime number
 }

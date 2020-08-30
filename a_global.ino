@@ -1,3 +1,8 @@
+// manual variables and string read
+double K1, K2, K3;
+double offsetAngle, offsetOmega, winkel_measured;
+String  v1, v2, v3, enable;
+
 // escon pins and motor vars
 int motorPin = 21;  
 int enablePin = 14; 
@@ -6,20 +11,20 @@ int highPWM = 58982; // 90% from 65535 (16bit PWM)
 int nullPWM = (highPWM + lowPWM) / 2;
 int analogPin = 0; // green
 int analogVal = 0;
-float stromPWM;
+double stromPWM;
 
 // string vars
-float setWrite = 0;
-float ampPWM = nullPWM;
+double setWrite = 0;
+double ampPWM = nullPWM;
 int incomingbyte = 0;
 String stringRead;
 int manualControl;
 
 //body angle and flywheel speeds
-float theta;
-float lqrSignal;
+double theta;
+double lqrSignal,lqrSignal2,PIDSignal;
 int16_t adc0;
-float omega;
+double omega;
 
 
 // set ledc params
