@@ -1,5 +1,6 @@
 void setup()
 {
+  Wire.begin(21,22) // Wire.begin(SDA,SCL), set i2c to joy-it nodemcu i2c labeled pins, may fix IMU errors with non-adafruit boards
   Serial.begin(256000);
   /* Initialise the sensor */
   Serial.println(F("Adafruit AHRS Fusion Example")); Serial.println("");
